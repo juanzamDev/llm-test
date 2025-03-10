@@ -70,12 +70,18 @@ class EmailProcessor:
         Returns the category or None if classification fails.
         """
         prompt = f"""
-        Categorize the following email into one of these categories: 
-        complaint, inquiry, feedback, support_request, other.
-        Email:
+        You are an AI that classifies emails into one of the following categories:
+        - complaint
+        - inquiry
+        - feedback
+        - support_request
+        - other
+
+        Here is an email:
         Subject: {email["subject"]}
         Body: {email["body"]}
-        Respond with only the category.
+
+        Please return ONLY the category that best describes this email.
         """
 
         try:
@@ -111,6 +117,18 @@ class EmailProcessor:
 
         return response_templates.get(classification, "Thank you for your message.")
 
+class EmailAutomationSystem:
+    def __init__(self, processor: EmailProcessor):
+        """Initialize the automation system with an EmailProcessor."""
+        self.processor = processor
+        self.response_handlers = {
+            "complaint": self._handle_complaint,
+            "inquiry": self._handle_inquiry,
+            "feedback": self._handle_feedback,
+            "support_request": self._handle_support_request,
+            "other": self._handle_other
+        }
+
     def process_emails(self, emails: List[Dict]) -> pd.DataFrame:
         """
         Processes a list of emails: classifies each email and generates a response.
@@ -122,11 +140,11 @@ class EmailProcessor:
             logger.info(f"\nProcessing email {email['id']}...")
 
             # Classify the email
-            classification = self.classify_email(email)
+            classification = self.processor.classify_email(email)
             logger.info(f"Classification: {classification}")
 
             # Generate a response
-            response = self.generate_response(email, classification)
+            response = self.processor.generate_response(email, classification) 
             logger.info(f"Generated response: {response}")
 
             results.append({
@@ -137,11 +155,77 @@ class EmailProcessor:
             })
 
         return pd.DataFrame(results)
+    
+    def _handle_complaint(self, email: Dict):
+        """
+        Handle complaint emails.
+        TODO: Implement complaint handling logic
+        """
+        pass
+
+    def _handle_inquiry(self, email: Dict):
+        """
+        Handle inquiry emails.
+        TODO: Implement inquiry handling logic
+        """
+        pass
+
+    def _handle_feedback(self, email: Dict):
+        """
+        Handle feedback emails.
+        TODO: Implement feedback handling logic
+        """
+        pass
+
+    def _handle_support_request(self, email: Dict):
+        """
+        Handle support request emails.
+        TODO: Implement support request handling logic
+        """
+        pass
+
+    def _handle_other(self, email: Dict):
+        """
+        Handle other category emails.
+        TODO: Implement handling logic for other categories
+        """
+        pass
+
+# Mock service functions
+def send_complaint_response(email_id: str, response: str):
+    """Mock function to simulate sending a response to a complaint"""
+    logger.info(f"Sending complaint response for email {email_id}")
+    # In real implementation: integrate with email service
+
+
+def send_standard_response(email_id: str, response: str):
+    """Mock function to simulate sending a standard response"""
+    logger.info(f"Sending standard response for email {email_id}")
+    # In real implementation: integrate with email service
+
+
+def create_urgent_ticket(email_id: str, category: str, context: str):
+    """Mock function to simulate creating an urgent ticket"""
+    logger.info(f"Creating urgent ticket for email {email_id}")
+    # In real implementation: integrate with ticket system
+
+
+def create_support_ticket(email_id: str, context: str):
+    """Mock function to simulate creating a support ticket"""
+    logger.info(f"Creating support ticket for email {email_id}")
+    # In real implementation: integrate with ticket system
+
+
+def log_customer_feedback(email_id: str, feedback: str):
+    """Mock function to simulate logging customer feedback"""
+    logger.info(f"Logging feedback for email {email_id}")
+    # In real implementation: integrate with feedback system
 
 # Execute email processing
 if __name__ == "__main__":
-    processor = EmailProcessor()
-    results_df = processor.process_emails(sample_emails)
+    processor = EmailProcessor()  
+    automation_system = EmailAutomationSystem(processor)
+    results_df = automation_system.process_emails(sample_emails)
 
     print("\nProcessing completed:")
     print(results_df)
