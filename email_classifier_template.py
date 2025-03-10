@@ -80,7 +80,7 @@ class EmailProcessor:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o-2024-11-20",
                 messages=[{"role": "system", "content": prompt}],
                 max_tokens=10
             )
