@@ -208,39 +208,73 @@ class EmailAutomationSystem:
         return pd.DataFrame(results)
     
     def _handle_complaint(self, email: Dict):
-        """
-        Handle complaint emails.
-        TODO: Implement complaint handling logic
-        """
-        pass
+        """Handle complaint emails."""
+        email_id = email["id"]
+        response = self.processor.generate_response(email, "complaint")
+
+        # Mock: Send a response for complaints
+        send_complaint_response(email_id, response)
+
+        # Create a support ticket for the complaint
+        create_urgent_ticket(email_id, category="complaint", context=email["body"])
+
+        logger.info(f"Complaint handled for email {email_id}")
+
 
     def _handle_inquiry(self, email: Dict):
-        """
-        Handle inquiry emails.
-        TODO: Implement inquiry handling logic
-        """
-        pass
+        """Handle inquiry emails."""
+        email_id = email["id"]
+        response = self.processor.generate_response(email, "inquiry")
+
+        # Send the response to the inquiry
+        send_standard_response(email_id, response)
+
+        # Optional: Create a support ticket for follow-up
+        create_support_ticket(email_id, context=email["body"])
+
+        logger.info(f"Inquiry handled for email {email_id}")
+
 
     def _handle_feedback(self, email: Dict):
-        """
-        Handle feedback emails.
-        TODO: Implement feedback handling logic
-        """
-        pass
+        """Handle feedback emails."""
+        email_id = email["id"]
+        response = self.processor.generate_response(email, "feedback")
+
+        # Log the feedback
+        log_customer_feedback(email_id, email["body"])
+
+        # Send the acknowledgment response
+        send_standard_response(email_id, response)
+
+        logger.info(f"Feedback handled for email {email_id}")
+
 
     def _handle_support_request(self, email: Dict):
-        """
-        Handle support request emails.
-        TODO: Implement support request handling logic
-        """
-        pass
+        """Handle support request emails."""
+        email_id = email["id"]
+        response = self.processor.generate_response(email, "support_request")
+
+        # Create a support ticket for the request
+        create_support_ticket(email_id, context=email["body"])
+
+        # Send the support response
+        send_standard_response(email_id, response)
+
+        logger.info(f"Support request handled for email {email_id}")
+
 
     def _handle_other(self, email: Dict):
-        """
-        Handle other category emails.
-        TODO: Implement handling logic for other categories
-        """
-        pass
+        """Handle other category emails, which need manual checking."""
+        email_id = email["id"]
+
+        # For emails marked as "other", print a message for manual review
+        logger.info(f"Email {email_id} marked as 'other'. Manual review required.")
+        
+        # Trigger an action like creating a general inquiry ticket or logging for manual review.
+        create_urgent_ticket(email_id, category="other", context=email["body"])
+
+        logger.info(f"Email {email_id} requires manual checking.")
+
 
 # Mock service functions
 def send_complaint_response(email_id: str, response: str):
