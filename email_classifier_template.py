@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from datetime import datetime
 import logging
+from sklearn.metrics import accuracy_score
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -50,8 +52,45 @@ sample_emails = [
         "subject": "Partnership opportunity",
         "body": "Our company is interested in exploring potential partnership opportunities with your organization. Would it be possible to schedule a call next week to discuss this further?",
         "timestamp": "2024-03-15T15:00:00Z"
+    },
+
+    # Edge case: email with insufficient content
+       {
+        "id": "006",
+        "from": "business@example.com",
+        "subject": "Hola",
+        "body": ""
+    }, 
+    # Edge case for mixed category
+     {
+        "id": "007",
+        "from": "Partheclient@example.com",
+        "subject": "Congratulations and Partnership opportunity",
+        "body": "I want to express my gratitude for the excellent support I received from Sarah on your team. She went above and beyond to resolve my issue—keep up the great work! Additionally, our company is interested in exploring potential partnership opportunities with your organization. Would it be possible to schedule a call next week to discuss this further?",
+        "timestamp": "2024-06-15T15:021:00Z"
+    },
+    # Edge case for random email
+{
+    "id": "008",
+    "from": "Crazy@example.com",
+    "subject": "Hi mate",
+    "body": "Just to mention I'm the king of the world",
+
     }
+
 ]
+# Accuracy of the classification model
+true_labels = {
+    "001": "complaint",
+    "002": "inquiry",
+    "003": "feedback",
+    "004": "support_request",
+    "005": "other",
+    "006": "other",
+    "007": "other",
+    "008": "other"
+
+}
 
 class EmailProcessor:
     def __init__(self):
@@ -69,13 +108,23 @@ class EmailProcessor:
         Uses OpenAI to classify an email into one of the predefined categories.
         Returns the category or None if classification fails.
         """
+        # Edge case for emails with insufficient content
+        if not email.get("body") or len(email["body"].strip()) < 5:
+            logger.warning(f"Email {email['id']} has insufficient content.")
+            return "other" 
+        
+        
         prompt = f"""
-        You are an AI that classifies emails into one of the following categories:
-        - complaint
-        - inquiry
-        - feedback
-        - support_request
-        - other
+        You are an AI that classifies emails into one or more of the following categories:
+        - complaint (e.g., "My product arrived broken, I want a refund.")
+        - inquiry (e.g., "Does this software work on Mac OS?")
+        - feedback (e.g., "Great customer service, I'm very satisfied!")
+        - support_request (e.g., "I'm getting error 5123 while installing the app.")
+        - other (e.g., "We'd like to explore a partnership opportunity.")
+
+        Rules:
+        1. If an email belongs to multiple categories, return other.
+        2. If uncertain, return other.
 
         Here is an email:
         Subject: {email["subject"]}
@@ -87,8 +136,10 @@ class EmailProcessor:
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o-2024-11-20",
-                messages=[{"role": "system", "content": prompt}],
-                max_tokens=10
+                messages=[{"role": "system", "content": "You are an AI assistant that classifies emails in complaint, inquiry, feedback, support_request or other."},
+                {"role": "user", "content": prompt}],
+                max_tokens=10,
+                #temperature=0
             )
 
             category = response.choices[0].message.content.strip().lower()
@@ -229,3 +280,16 @@ if __name__ == "__main__":
 
     print("\nProcessing completed:")
     print(results_df)
+
+# Predicted labels and actual labels
+predicted_labels = results_df["classification"].tolist()
+actual_labels = [true_labels[email_id] for email_id in results_df["email_id"].tolist()]
+
+# calculate accuracy
+accuracy = accuracy_score(actual_labels, predicted_labels)
+print(f"Classification Accuracy: {accuracy:.2f}")
+
+# Display misclassified emails
+for idx, (pred, actual) in enumerate(zip(predicted_labels, actual_labels)):
+    if pred != actual:
+        print(f"Misclassified email {results_df.loc[idx, 'email_id']}: predicted '{pred}', actual '{actual}'")
